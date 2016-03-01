@@ -129,6 +129,7 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   let wip = 0
   let clipboard = 0
   let openbrowser = 0
+  let public = 0
   let path = ''
   if strlen(g:esa_team) == 0
     echohl ErrorMsg | echomsg 'You have not configured a esa access token.' | echohl None
@@ -146,6 +147,8 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
       let wip = 1
     elseif arg =~# '^\(-c\|--clipboard\)$\C'
       let clipboard = 1
+    elseif arg =~# '^\(-p\|--public\)$\C'
+      let public = 1
     elseif len(arg) > 0
       let path = arg
     endif
@@ -153,7 +156,7 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   unlet args
 
   let content = join(getline(a:line1, a:line2), "\n")
-  let url = s:EsaPost(content, path, wip)
+  let url = s:EsaPost(content, path, wip, public)
   if type(url) == 1 && len(url) > 0
     if openbrowser == 1
       call s:open_browser(url)
@@ -171,7 +174,7 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   return 1
 endfunction
 
-function! s:EsaPost(content, path, wip) abort
+function! s:EsaPost(content, path, wip, public) abort
   let post = {"post" : {"name" : "", "body_md" : a:content, "category" : "" }}
   let filename = s:get_current_filename(1)
   let category = ''
@@ -209,10 +212,36 @@ function! s:EsaPost(content, path, wip) abort
   if res.status =~# '^2'
     let obj = webapi#json#decode(res.content)
     let loc = obj['url']
+
+    if a:public == 1
+      let loc = s:EsaPublicPost(obj['number'])
+    endif
+
     redraw | echomsg 'Done: '.loc
   else
     let loc = ''
-    echohl ErrorMsg | echomsg 'Post failed: '. res.message | echohl None
+    echohl ErrorMsg | echomsg 'Post failed: '. res.status | echohl None
+  endif
+  return loc
+endfunction
+
+function! s:EsaPublicPost(number) abort
+  let loc = ''
+  let header = {"Content-Type": "application/json"}
+  let auth = s:EsaGetAuthHeader()
+  if len(auth) == 0
+    redraw
+    echohl ErrorMsg | echomsg v:errmsg | echohl None
+    return
+  endif
+  let header['Authorization'] = 'Bearer '.auth
+  let res = webapi#http#post(g:esa_api_url.g:esa_team.'/posts/'.a:number.'/sharing', webapi#json#encode({}), header)
+  if res.status =~# '^2'
+    let obj = webapi#json#decode(res.content)
+    let loc = obj['html']
+  else
+    let loc = ''
+    echohl ErrorMsg | echomsg 'Get Sharing URL failed: '.res.status | echohl None
   endif
   return loc
 endfunction
