@@ -1,6 +1,99 @@
+"=============================================================================
+" File: esa.vim
+" Author: Masato Yamamoto <jajkeqos@gmail.com>
+" Last Change: 01-Mar-2016.
+" Version: 0.1
+" WebPage: http://github.com/upamune/esa.vim
+" License: BSD
 
 let s:save_cpo = &cpoptions
 set cpoptions&vim
+
+if exists('g:esa_disabled') && g:esa_disabled == 1
+  function! esa#Esa(...) abort
+  endfunction
+  finish
+endif
+
+if !executable('curl')
+  echohl ErrorMsg | echomsg 'Esa: require ''curl'' command' | echohl None
+  finish
+endif
+
+if globpath(&rtp, 'autoload/webapi/http.vim') ==# ''
+  echohl ErrorMsg | echomsg 'Esa: require ''webapi'', install https://github.com/mattn/webapi-vim' | echohl None
+  finish
+else
+  call webapi#json#true()
+endif
+
+let s:esa_token_file = expand(get(g:, 'esa_token_file', '~/.esa-vim'))
+let s:system = function(get(g:, 'webapi#system_function', 'system'))
+
+if !exists('g:esa_team')
+  let g:esa_team = $ESA_TEAM
+endif
+
+if !exists('g:esa_api_url')
+  let g:esa_api_url = 'https://api.esa.io/v1/teams/'
+endif
+if g:esa_api_url !~# '/$'
+  let g:esa_api_url .= '/'
+endif
+
+function! s:shellwords(str) abort
+  let words = split(a:str, '\%(\([^ \t\''"]\+\)\|''\([^\'']*\)''\|"\(\%([^\"\\]\|\\.\)*\)"\)\zs\s*\ze')
+  let words = map(words, 'substitute(v:val, ''\\\([\\ ]\)'', ''\1'', "g")')
+  let words = map(words, 'matchstr(v:val, ''^\%\("\zs\(.*\)\ze"\|''''\zs\(.*\)\ze''''\|.*\)$'')')
+  return words
+endfunction
+
+function! s:get_current_filename(no) abort
+  let filename = expand('%:t')
+  return filename
+endfunction
+
+function! s:get_browser_command() abort
+  let esa_browser_command = get(g:, 'esa_browser_command', '')
+  if esa_browser_command ==# ''
+    if has('win32') || has('win64')
+      let esa_browser_command = '!start rundll32 url.dll,FileProtocolHandler %URL%'
+    elseif has('mac') || has('macunix') || has('gui_macvim') || system('uname') =~? '^darwin'
+      let esa_browser_command = 'open %URL%'
+    elseif executable('xdg-open')
+      let esa_browser_command = 'xdg-open %URL%'
+    elseif executable('firefox')
+      let esa_browser_command = 'firefox %URL% &'
+    else
+      let esa_browser_command = ''
+    endif
+  endif
+  return esa_browser_command
+endfunction
+
+function! s:open_browser(url) abort
+  let cmd = s:get_browser_command()
+  if len(cmd) == 0
+    redraw
+    echohl WarningMsg
+    echo 'It seems that you don''t have general web browser. Open URL below.'
+    echohl None
+    echo a:url
+    return
+  endif
+  let quote = &shellxquote == '"' ?  "'" : '"'
+  if cmd =~# '^!'
+    let cmd = substitute(cmd, '%URL%', '\=quote.a:url.quote', 'g')
+    let g:hoge = cmd
+    silent! exec cmd
+  elseif cmd =~# '^:[A-Z]'
+    let cmd = substitute(cmd, '%URL%', '\=a:url', 'g')
+    exec cmd
+  else
+    let cmd = substitute(cmd, '%URL%', '\=quote.a:url.quote', 'g')
+    call system(cmd)
+  endif
+endfunction
 
 function! s:EsaGetAuthHeader() abort
   let auth = ''
@@ -18,7 +111,7 @@ function! s:EsaGetAuthHeader() abort
   echohl WarningMsg
   echo 'esa.vim require an access token for esa. These settings are stored in "~/.esa-vim". If you want to revoke, do "rm ~/.esa-vim".'
   echohl None
-  let access_token = inputsecret('esa access token for '.g:esa_team.':')
+  let access_token = input('esa access token for '.g:esa_team.':')
   if len(access_token) == 0
     let v:errmsg = 'Canceled'
     return ''
@@ -28,6 +121,79 @@ function! s:EsaGetAuthHeader() abort
     call system('chmod go= '.s:esa_token_file)
   endif
   return access_token
+endfunction
+
+function! esa#Esa(count, bang, line1, line2, ...) abort
+  redraw
+  let bufname = bufname('%')
+  let openbrowser = 0
+  let path = ''
+  if strlen(g:esa_team) == 0
+    echohl ErrorMsg | echomsg 'You have not configured a esa access token.' | echohl None
+    return
+  endif
+
+  let args = (a:0 > 0) ? s:shellwords(a:1) : []
+  for arg in args
+    if arg =~# '^\(-h\|--help\)$\C'
+      help :Esa
+      return
+    elseif arg =~# '^\(-b\|--browser\)$\C'
+      let openbrowser = 1
+    elseif len(arg) > 0
+      let path = arg
+    endif
+  endfor
+  unlet args
+
+  let content = join(getline(a:line1, a:line2), "\n")
+  let url = s:EsaPost(content, path)
+  if type(url) == 1 && len(url) > 0
+    if openbrowser == 1
+      call s:open_browser(url)
+    endif
+  endif
+  return 1
+endfunction
+
+function! s:EsaPost(content, path) abort
+  let post = {"post" : {"name" : "", "body_md" : a:content, "category" : "", "wip": function('webapi#json#false')}}
+  let filename = s:get_current_filename(1)
+  let category = ''
+  let name = ''
+  let pos = strridx(a:path, '/')
+
+  if len(a:path) == 0
+    let name = s:get_current_filename(1)
+  elseif pos == -1
+    let name = a:path
+  else
+    let category = a:path[:(pos-1)]
+    let name = a:path[(pos+1):]
+  endif
+  let post.post['name'] = name
+  let post.post['category'] = category
+
+  let header = {"Content-Type": "application/json"}
+  let auth = s:EsaGetAuthHeader()
+  if len(auth) == 0
+    redraw
+    echohl ErrorMsg | echomsg v:errmsg | echohl None
+    return
+  endif
+  let header['Authorization'] = 'Bearer '.auth
+
+  redraw | echon 'Posting it to esa... '
+  let res = webapi#http#post(g:esa_api_url.g:esa_team.'/posts', webapi#json#encode(post), header)
+  if res.status =~# '^2'
+    let obj = webapi#json#decode(res.content)
+    let loc = obj['url']
+    redraw | echomsg 'Done: '.loc
+  else
+    let loc = ''
+    echohl ErrorMsg | echomsg 'Post failed: '. res.message | echohl None
+  endif
+  return loc
 endfunction
 
 let &cpo = s:save_cpo
