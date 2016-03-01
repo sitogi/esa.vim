@@ -2,51 +2,37 @@
 
 This is a vimscript for esa (https://esa.io/).
 
-For the latest version please see https://github.com/upamune/esa-vim.
+For the latest version please see https://github.com/upamune/esa.vim.
 
 ## Usage:
 
 ### Implemented :rocket:
 
-- Post current buffer to esa, using default privacy option.
+- Post current buffer to esa
 
-        :Esa path/to/category/post
+        :Esa path/to/category/name
 
-- Post selected text to esa, using default privacy option.
-  This applies to all permutations listed below (except multi).
+- Post selected text to esa
 
-        :'<,'>Esa path/to/category/post
+        :'<,'>Esa path/to/category/name
 
-- Create a public esa.
-  (Only relevant if you've set esas to be private by default.)
+- Create a public (sharing post) esa.
 
-        :Esa -p path/to/category/post
+        :Esa -p path/to/category/name
 
-
-### Not Implemented Yet :bow:
-
-- Edit the esa with post_id '123' (you need to have opened the esa buffer
-  first).
-
-        :Esa -e 123
-
-- List your team posts with post id.
-
-        :Esa -l
-
-- List posts with post id from user "upamune".
-
-        :Esa -l upamune
-
-- Open the esa on browser after you post or update it.
+- Open the esa on browser after you post
 
         :Esa -b
+
+- Copy the URL after you post
+
+        :Esa -c
 
 ### Install with [vim-plug](https://github.com/junegunn/vim-plug)
 
 Add the following lines to your `.vimrc`.
 
-    Plug 'mattn/webapi-vim' | Plug 'upamune/esa-vim'
+    Plug 'mattn/webapi-vim' | Plug 'upamune/esa.vim'
 
 Now restart Vim and run `:PlugInstall`.
 
@@ -54,7 +40,7 @@ Now restart Vim and run `:PlugInstall`.
 
 Add the following line to your `.vimrc`.
 
-    NeoBundle 'upamune/esa-vim', {'depends': 'upamune/webapi-vim'}
+    NeoBundle 'upamune/esa.vim', {'depends': 'mattn/webapi-vim'}
 
 ## Requirements:
 
