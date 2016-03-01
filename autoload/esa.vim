@@ -127,6 +127,7 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   redraw
   let bufname = bufname('%')
   let wip = 0
+  let clipboard = 0
   let openbrowser = 0
   let path = ''
   if strlen(g:esa_team) == 0
@@ -143,6 +144,8 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
       let openbrowser = 1
     elseif arg =~# '^\(-w\|--wip\)$\C'
       let wip = 1
+    elseif arg =~# '^\(-c\|--clipboard\)$\C'
+      let clipboard = 1
     elseif len(arg) > 0
       let path = arg
     endif
@@ -154,6 +157,15 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   if type(url) == 1 && len(url) > 0
     if openbrowser == 1
       call s:open_browser(url)
+    endif
+    if clipboard == 1
+      if exists('g:esa_clip_command')
+        call system(g:esa_clip_command, url)
+      elseif has('clipboard')
+        let @+ = url
+      else
+        let @" = url
+      endif
     endif
   endif
   return 1
