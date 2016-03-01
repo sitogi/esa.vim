@@ -13,7 +13,7 @@ endif
 let g:loaded_esa_vim = 1
 
 function! s:CompleteArgs(arg_lead,cmdline,cursor_pos)
-    return filter(copy(["-b", "--browser"
+    return filter(copy(["-b", "-w", "--browser", "--wip"
                 \ ]), 'stridx(v:val, a:arg_lead)==0')
 endfunction
 

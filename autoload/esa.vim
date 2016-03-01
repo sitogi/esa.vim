@@ -126,6 +126,7 @@ endfunction
 function! esa#Esa(count, bang, line1, line2, ...) abort
   redraw
   let bufname = bufname('%')
+  let wip = 0
   let openbrowser = 0
   let path = ''
   if strlen(g:esa_team) == 0
@@ -140,6 +141,8 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
       return
     elseif arg =~# '^\(-b\|--browser\)$\C'
       let openbrowser = 1
+    elseif arg =~# '^\(-w\|--wip\)$\C'
+      let wip = 1
     elseif len(arg) > 0
       let path = arg
     endif
@@ -147,7 +150,7 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   unlet args
 
   let content = join(getline(a:line1, a:line2), "\n")
-  let url = s:EsaPost(content, path)
+  let url = s:EsaPost(content, path, wip)
   if type(url) == 1 && len(url) > 0
     if openbrowser == 1
       call s:open_browser(url)
@@ -156,8 +159,8 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
   return 1
 endfunction
 
-function! s:EsaPost(content, path) abort
-  let post = {"post" : {"name" : "", "body_md" : a:content, "category" : "", "wip": function('webapi#json#false')}}
+function! s:EsaPost(content, path, wip) abort
+  let post = {"post" : {"name" : "", "body_md" : a:content, "category" : "" }}
   let filename = s:get_current_filename(1)
   let category = ''
   let name = ''
@@ -173,6 +176,12 @@ function! s:EsaPost(content, path) abort
   endif
   let post.post['name'] = name
   let post.post['category'] = category
+
+  if a:wip == 0
+    let post.post['wip'] = function('webapi#json#false')
+  else
+    let post.post['wip'] = function('webapi#json#true')
+  endif
 
   let header = {"Content-Type": "application/json"}
   let auth = s:EsaGetAuthHeader()
