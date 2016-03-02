@@ -1,0 +1,136 @@
+*Esa.vim* Vimscript for creating esa posts (http://esa.io)
+
+Usage                                          |esa-vim-usage|
+Tips                                           |esa-vim-tips|
+License                                        |esa-vim-license|
+Install                                        |esa-vim-install|
+Requirements                                   |esa-vim-requirements|
+Setup                                          |esa-vim-setup|
+
+This is a vimscript for creating esa posts (http://esa.io)
+
+For the latest version please see https://github.com/upamune/esa.vim.
+
+==============================================================================
+USAGE                                                 *:Esa* *esa-vim-usage*
+
+- Post current buffer to esa. >
+
+        :Esa path/to/category/name
+<
+
+In this case, the category will be named 'path/to/category' and the name will
+be named 'name'. You can omit this argument. If you omit this argument, the
+category will be named '' and the name will be named current buffer name.
+
+- Post selected text to esa. >
+
+        :'<,'>Esa
+<
+
+- Create a public (sharing post) esa. >
+
+        :Esa -p
+        :Esa --public
+<
+
+- Open the esa on browser after you post. >
+
+        :Esa -b
+        :Esa --browser
+<
+
+- Copy the URL after you post. >
+
+        :Esa -c
+        :Esa --clipboard
+<
+
+==============================================================================
+TIPS                                                           *esa-vim-tips*
+
+If you set "g:esa_clip_command", esa.vim will copy the esa code with option
+"-c".
+
+  - Mac: >
+    let g:esa_clip_command = 'pbcopy'
+<
+  - Linux: >
+    let g:esa_clip_command = 'xclip -selection clipboard'
+<
+  - Others (cygwin?): >
+    let g:esa_clip_command = 'putclip'
+<
+If you want to change the browser: >
+
+    let g:esa_browser_command = 'w3m %URL%'
+<
+or: >
+
+    let g:esa_browser_command = 'opera %URL% &'
+<
+On windows, this should work with your user settings.
+
+
+==============================================================================
+LICENSE                                                     *esa-vim-license*
+
+
+  Copyright 2016 by Masato Yamamoto
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+  REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+  OF THE POSSIBILITY OF SUCH DAMAGE.
+
+==============================================================================
+INSTALL                                                     *esa-vim-install*
+
+Copy following files into your plugin directory.
+
+rtp:
+  - autoload/esa.vim
+  - plugin/esa.vim
+
+If you want to uninstall esa.vim, remember to also remove `~/.esa-vim`.
+
+You need to install webapi-vim also:
+
+  http://www.vim.org/scripts/script.php?script_id=4019
+
+If you want to use latest one:
+
+  https://github.com/mattn/webapi-vim
+
+==============================================================================
+REQUIREMENTS                                           *esa-vim-requirements*
+
+  - curl command (http://curl.haxx.se/)
+  - webapi-vim (https://github.com/mattn/webapi-vim)
+
+==============================================================================
+SETUP                                                       *esa-vim-setup*
+
+First, you have to set a team name. >
+
+    let g:esa_name = 'docs'
+<
+
+Then, esa.vim will ask for your team access token  when you first use it.
+
+ vim:tw=78:ts=8:ft=help:norl:
