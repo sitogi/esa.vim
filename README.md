@@ -28,6 +28,10 @@ For the latest version please see https://github.com/upamune/esa.vim.
 
         :Esa -c
 
+- Create a wip post.
+
+        :Esa -w
+
 ### Install with [vim-plug](https://github.com/junegunn/vim-plug)
 
 Add the following lines to your `.vimrc`.

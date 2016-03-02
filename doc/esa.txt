@@ -44,6 +44,11 @@ category will be named '' and the name will be named current buffer name.
 
         :Esa -c
         :Esa --clipboard
+
+- Create a wip post. >
+
+        :Esa -w
+        :Esa --wip
 <
 
 ==============================================================================
