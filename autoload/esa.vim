@@ -141,6 +141,13 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
     if arg =~# '^\(-h\|--help\)$\C'
       help :Esa
       return
+    elseif arg =~# '^\(-e\|--edit\)$\C'
+      " 数値は仮
+      if len(arg) > 0
+        echo arg
+        call s:EsaLoad(arg)
+      endif
+      return
     elseif arg =~# '^\(-b\|--browser\)$\C'
       let openbrowser = 1
     elseif arg =~# '^\(-w\|--wip\)$\C'
@@ -244,6 +251,42 @@ function! s:EsaPublicPost(number) abort
     echohl ErrorMsg | echomsg 'Get Sharing URL failed: '.res.status | echohl None
   endif
   return loc
+endfunction
+
+function! s:EsaLoad(id) abort
+  let header = {"Content-Type": "application/json"}
+  let auth = s:EsaGetAuthHeader()
+  if len(auth) == 0
+    redraw
+    echohl ErrorMsg | echomsg v:errmsg | echohl None
+    return
+  endif
+  let header['Authorization'] = 'Bearer '.auth
+  let res = webapi#http#get(g:esa_api_url.g:esa_team.'/posts/' . a:id, webapi#json#encode({}), header)
+  if res.status =~# '^2'
+    let obj = webapi#json#decode(res.content)
+    " バッファに展開したときに改行が一つ多く挿入されるため削除 (Vim のバッファでは \r も一つの改行としてみなされる？)
+    let mdStr = substitute(obj['body_md'], '\r\n', '\n', 'g')
+    call s:InsertContent(mdStr)
+
+    " TODO カテゴリと PostID を保持しておき、上書き保存時に使えるようにしたい
+
+    " TODO 開いたあとに syntax highlight を効かせたい
+
+  else
+    echohl ErrorMsg | echomsg 'Loading post failed: '.res.status | echohl None
+  endif
+endfunction
+
+function! s:InsertContent(contentStr) abort
+    setlocal nosmartindent
+    execute ":normal a" . a:contentStr
+    setlocal smartindent
+
+    " 最終行に不要な区切り文字が挿入されるため空行にしておく
+    execute ":normal dd"
+    call append(line("$"), "")
+    execute ":normal G"
 endfunction
 
 let &cpo = s:save_cpo
