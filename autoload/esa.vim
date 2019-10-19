@@ -136,18 +136,22 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
     return
   endif
 
+  " Load content
   let args = (a:0 > 0) ? s:shellwords(a:1) : []
+  if get(args, 0) =~# '^\(-e\|--edit\)$\C'
+      let postId = get(args, 1)
+      if len(postId) > 0
+        call s:EsaLoad(postId)
+      endif
+      return
+  endif
+
+  " Post content
   for arg in args
     if arg =~# '^\(-h\|--help\)$\C'
       help :Esa
       return
     elseif arg =~# '^\(-e\|--edit\)$\C'
-      " 数値は仮
-      if len(arg) > 0
-        echo arg
-        call s:EsaLoad(arg)
-      endif
-      return
     elseif arg =~# '^\(-b\|--browser\)$\C'
       let openbrowser = 1
     elseif arg =~# '^\(-w\|--wip\)$\C'
@@ -262,23 +266,26 @@ function! s:EsaLoad(id) abort
     return
   endif
   let header['Authorization'] = 'Bearer '.auth
-  let res = webapi#http#get(g:esa_api_url.g:esa_team.'/posts/' . a:id, webapi#json#encode({}), header)
+  let url = g:esa_api_url.g:esa_team.'/posts/' . a:id
+  let res = webapi#http#get(url, webapi#json#encode({}), header)
   if res.status =~# '^2'
     let obj = webapi#json#decode(res.content)
     " バッファに展開したときに改行が一つ多く挿入されるため削除 (Vim のバッファでは \r も一つの改行としてみなされる？)
     let mdStr = substitute(obj['body_md'], '\r\n', '\n', 'g')
     call s:InsertContent(mdStr)
 
-    " TODO カテゴリと PostID を保持しておき、上書き保存時に使えるようにしたい
+    " ロードしたバッファで ID とカテゴリを保持しておき、上書き保存に使用する
+    let b:postId = obj['number']
+    let b:category = obj['category']
 
-    " TODO 開いたあとに syntax highlight を効かせたい
-
+    echon "Load succeeded." . " PostID: " . b:postId . ", Category: " . b:category
   else
     echohl ErrorMsg | echomsg 'Loading post failed: '.res.status | echohl None
   endif
 endfunction
 
 function! s:InsertContent(contentStr) abort
+    " TODO watch current setting
     setlocal nosmartindent
     execute ":normal a" . a:contentStr
     setlocal smartindent
