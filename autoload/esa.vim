@@ -284,9 +284,9 @@ function! s:EsaLoad(id) abort
 
     " ロードしたバッファで ID とカテゴリを保持しておき、上書き保存に使用する
     let b:postId = obj['number']
-    let b:category = obj['category']
+    let b:fullName = obj['full_name']
 
-    echon "Load succeeded." . " PostID: " . b:postId . ", Category: " . b:category
+    echon "Load succeeded. (" . b:fullName . ")"
   else
     echohl ErrorMsg | echomsg 'Loading post failed: '.res.status | echohl None
   endif
@@ -305,8 +305,8 @@ function! s:InsertContent(contentStr) abort
 endfunction
 
 function! s:EsaOverwrite(content) abort
-  if !exists("b:postId") || !exists("b:category")
-      let msg = b:postId is not set. Load content before overwrite.
+  if !exists("b:postId")
+      let msg = "PostID is not set. Need to load content before overwrite."
       echohl ErrorMsg | echomsg msg| echohl None
     return
   endif
@@ -325,7 +325,8 @@ function! s:EsaOverwrite(content) abort
   let res = webapi#http#send(req)
   if res.status =~# '^2'
     let obj = webapi#json#decode(res.content)
-    echon "Overrite succeeded." . " PostID: " . b:postId
+    let location = obj['url']
+    echon "Overrite succeeded." . "(URL: " . location . ")"
   else
     echohl ErrorMsg | echomsg 'Overwrite post failed: '.res.status | echohl None
   endif
