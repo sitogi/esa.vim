@@ -32,6 +32,14 @@ For the latest version please see https://github.com/upamune/esa.vim.
 
         :Esa -w
 
+- Load (and edit) a post.
+
+        :Esa -e 55
+
+- Overwrite the post. You need to load before this command at same buffer.
+
+        :Esa -o
+
 ### Install with [vim-plug](https://github.com/junegunn/vim-plug)
 
 Add the following lines to your `.vimrc`.
