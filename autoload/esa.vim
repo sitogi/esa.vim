@@ -136,14 +136,22 @@ function! esa#Esa(count, bang, line1, line2, ...) abort
     return
   endif
 
-  " Load content
   let args = (a:0 > 0) ? s:shellwords(a:1) : []
+
+  " Load content
   if get(args, 0) =~# '^\(-e\|--edit\)$\C'
-      let postId = get(args, 1)
-      if len(postId) > 0
-        call s:EsaLoad(postId)
-      endif
-      return
+    let postId = get(args, 1)
+    if len(postId) > 0
+      call s:EsaLoad(postId)
+    endif
+    return
+  endif
+
+  " Overwrite content
+  if get(args, 0) =~# '^\(-o\|--overwrite\)$\C'
+    let content = join(getline(a:line1, a:line2), "\n")
+    call s:EsaOverwrite(content)
+    return
   endif
 
   " Post content
@@ -294,6 +302,33 @@ function! s:InsertContent(contentStr) abort
     execute ":normal dd"
     call append(line("$"), "")
     execute ":normal G"
+endfunction
+
+function! s:EsaOverwrite(content) abort
+  if !exists("b:postId") || !exists("b:category")
+      let msg = b:postId is not set. Load content before overwrite.
+      echohl ErrorMsg | echomsg msg| echohl None
+    return
+  endif
+
+  let header = {"Content-Type": "application/json"}
+  let auth = s:EsaGetAuthHeader()
+  if len(auth) == 0
+    redraw
+    echohl ErrorMsg | echomsg v:errmsg | echohl None
+    return
+  endif
+  let header['Authorization'] = 'Bearer '.auth
+  let url = g:esa_api_url . g:esa_team . '/posts/' . b:postId
+  let post = {"post" : {"body_md" : a:content, "original_revision" : ""}}
+  let req = {'url': url, 'method': 'PATCH', 'header': header, 'data': webapi#json#encode(post)}
+  let res = webapi#http#send(req)
+  if res.status =~# '^2'
+    let obj = webapi#json#decode(res.content)
+    echon "Overrite succeeded." . " PostID: " . b:postId
+  else
+    echohl ErrorMsg | echomsg 'Overwrite post failed: '.res.status | echohl None
+  endif
 endfunction
 
 let &cpo = s:save_cpo
