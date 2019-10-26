@@ -293,10 +293,23 @@ function! s:EsaLoad(id) abort
 endfunction
 
 function! s:InsertContent(contentStr) abort
-    " TODO watch current setting
-    setlocal nosmartindent
+    let smartIndentExisted = exists("smartindent")
+    let autoIndentExisted = exists("autoindent")
+    if smartIndentExisted
+        setlocal nosmartindent
+    endif
+    if autoIndentExisted
+        setlocal noautoindent
+    endif
+
     execute ":normal a" . a:contentStr
-    setlocal smartindent
+
+    if smartIndentExisted
+        setlocal smartindent
+    endif
+    if autoIndentExisted
+        setlocal autoindent
+    endif
 
     " 最終行に不要な区切り文字が挿入されるため空行にしておく
     execute ":normal dd"
